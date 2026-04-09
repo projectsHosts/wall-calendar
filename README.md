@@ -128,10 +128,6 @@ The assessment brief explicitly required a frontend-only solution. All data pers
 
 ---
 
-## Live Demo
-
-Deployed on Vercel: [your-vercel-link-here]
-
 ---
 
 ## Author
