@@ -104,7 +104,7 @@ wall-calendar/
 
 ## 📹 Demo
 
-- **Video demo:** _add link here_  
+- **Video demo:** https://wall-calendar-sandy-ten.vercel.app/  
 
 ---
 
