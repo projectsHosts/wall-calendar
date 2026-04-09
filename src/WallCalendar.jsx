@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Sun1, Moon } from "iconsax-react";
 import {
   ArrowLeft2,
   ArrowRight2,
@@ -393,23 +394,17 @@ export default function WallCalendar() {
               <div className="toggle-pill" onClick={() => setShowHol(p => !p)} />
             </label>
 
-            <button
-              className="wc-theme-btn"
-              onClick={() => setDark(p => !p)}
-              title={dark ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              <lord-icon
-                ref={lordRef}
-                src={dark
-                  ? "https://cdn.lordicon.com/abfverha.json"
-                  : "https://cdn.lordicon.com/ybfcwnqq.json"}
-                trigger="click"
-                colors={dark
-                  ? "primary:#a78bfa,secondary:#7c3aed"
-                  : "primary:#6d28d9,secondary:#4c1d95"}
-                style={{ width: 22, height: 22 }}
-              />
-            </button>
+           <button
+  className="wc-theme-btn"
+  onClick={() => setDark(p => !p)}
+  title={dark ? "Switch to light mode" : "Switch to dark mode"}
+>
+  {dark ? (
+    <Sun1 size={20} color={T.accent} variant="Bold" />
+  ) : (
+    <Moon size={20} color={T.accent} variant="Bold" />
+  )}
+</button>
           </div>
         </header>
 
