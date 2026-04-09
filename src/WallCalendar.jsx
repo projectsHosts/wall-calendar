@@ -1,489 +1,575 @@
 import { useState, useEffect, useRef } from "react";
+import {
+  ArrowLeft2,
+  ArrowRight2,
+  Calendar,
+  Note,
+  Trash,
+  Add,
+  TickCircle,
+  InfoCircle,
+  CloseCircle,
+} from "iconsax-react";
 
-const MONTH_IMAGES = [
-  { url: "https://images.unsplash.com/photo-1612838320302-4b3b3b3b3b3b?w=800", fallback: "❄️", label: "January", gradient: "linear-gradient(135deg, #1a3a4a 0%, #2d6a8a 50%, #4a9aba 100%)", accent: "#4a9aba", bg: "#0a1a2a" },
-  { url: null, fallback: "🌸", label: "February", gradient: "linear-gradient(135deg, #4a1a3a 0%, #8a3a6a 50%, #c46a9a 100%)", accent: "#c46a9a", bg: "#1a0a14" },
-  { url: null, fallback: "🌱", label: "March", gradient: "linear-gradient(135deg, #1a3a1a 0%, #3a7a3a 50%, #6aaa6a 100%)", accent: "#6aaa6a", bg: "#0a140a" },
-  { url: null, fallback: "🌷", label: "April", gradient: "linear-gradient(135deg, #3a2a1a 0%, #8a6a3a 50%, #c49a6a 100%)", accent: "#c49a6a", bg: "#140e08" },
-  { url: null, fallback: "☀️", label: "May", gradient: "linear-gradient(135deg, #3a3a1a 0%, #8a8a2a 50%, #c4c44a 100%)", accent: "#c4c44a", bg: "#14140a" },
-  { url: null, fallback: "🏖️", label: "June", gradient: "linear-gradient(135deg, #1a2a4a 0%, #2a5a9a 50%, #4a8aca 100%)", accent: "#4a8aca", bg: "#0a1020" },
-  { url: null, fallback: "🌞", label: "July", gradient: "linear-gradient(135deg, #4a2a0a 0%, #9a5a1a 50%, #d48a3a 100%)", accent: "#d48a3a", bg: "#200e04" },
-  { url: null, fallback: "🍦", label: "August", gradient: "linear-gradient(135deg, #3a1a4a 0%, #7a3a9a 50%, #ba6aca 100%)", accent: "#ba6aca", bg: "#140a1c" },
-  { url: null, fallback: "🍂", label: "September", gradient: "linear-gradient(135deg, #3a2a0a 0%, #8a5a1a 50%, #c4843a 100%)", accent: "#c4843a", bg: "#14100a" },
-  { url: null, fallback: "🎃", label: "October", gradient: "linear-gradient(135deg, #3a1a0a 0%, #8a3a0a 50%, #c45a1a 100%)", accent: "#c45a1a", bg: "#180800" },
-  { url: null, fallback: "🍁", label: "November", gradient: "linear-gradient(135deg, #2a1a1a 0%, #6a3a2a 50%, #9a5a3a 100%)", accent: "#9a5a3a", bg: "#100808" },
-  { url: null, fallback: "⛄", label: "December", gradient: "linear-gradient(135deg, #1a2a3a 0%, #2a4a6a 50%, #4a6a9a 100%)", accent: "#4a6a9a", bg: "#0a1018" },
+/* ─────────────────────────────────────────
+   DATA
+───────────────────────────────────────── */
+const MONTHS = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December",
 ];
-
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DAYS_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
 const HOLIDAYS_BY_YEAR = {
   2025: {
-    "1-1": "New Year's Day",
+    "1-1":  "New Year's Day",
     "1-14": "Makar Sankranti",
     "1-26": "Republic Day",
     "2-26": "Maha Shivratri",
     "3-13": "Holika Dahan",
-    "3-14": "Holi 🎨",
-    "4-6": "Ram Navami",
+    "3-14": "Holi",
+    "4-6":  "Ram Navami",
     "4-14": "Dr. Ambedkar Jayanti",
     "4-18": "Good Friday",
     "5-12": "Buddha Purnima",
-    "8-15": "Independence Day 🇮🇳",
+    "8-15": "Independence Day",
     "8-16": "Janmashtami",
     "10-2": "Gandhi Jayanti",
-    "10-20": "Diwali 🪔",
+    "10-20":"Diwali",
     "11-5": "Guru Nanak Jayanti",
-    "12-25": "Christmas 🎄",
+    "12-25":"Christmas",
   },
   2026: {
-    "1-1": "New Year's Day",
+    "1-1":  "New Year's Day",
     "1-14": "Makar Sankranti",
     "1-26": "Republic Day",
     "2-15": "Maha Shivratri",
-    "3-3": "Holika Dahan",
-    "3-4": "Holi 🎨",
+    "3-3":  "Holika Dahan",
+    "3-4":  "Holi",
     "3-27": "Good Friday",
     "4-14": "Dr. Ambedkar Jayanti",
     "4-25": "Ram Navami",
-    "8-15": "Independence Day 🇮🇳",
-    "9-4": "Janmashtami",
+    "8-15": "Independence Day",
+    "9-4":  "Janmashtami",
     "10-2": "Gandhi Jayanti",
     "10-8": "Dussehra",
-    "10-28": "Diwali 🪔",
-    "11-24": "Guru Nanak Jayanti",
-    "12-25": "Christmas 🎄",
+    "10-28":"Diwali",
+    "11-24":"Guru Nanak Jayanti",
+    "12-25":"Christmas",
   },
 };
+
 function getHolidays(year) {
-  return HOLIDAYS_BY_YEAR[year] || HOLIDAYS_BY_YEAR[2026];
+  return HOLIDAYS_BY_YEAR[year] || {};
 }
 
-function getDaysInMonth(year, month) {
-  return new Date(year, month + 1, 0).getDate();
-}
-function getFirstDayOfMonth(year, month) {
-  return new Date(year, month, 1).getDay();
-}
-function isSameDay(a, b) {
-  if (!a || !b) return false;
-  return a.y === b.y && a.m === b.m && a.d === b.d;
-}
-function isInRange(date, start, end) {
-  if (!start || !end || !date) return false;
+function getDaysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
+function getFirstDay(y, m)    { return new Date(y, m, 1).getDay(); }
+function sameDay(a, b)        { return a && b && a.y === b.y && a.m === b.m && a.d === b.d; }
+function inRange(date, s, e) {
+  if (!s || !e || !date) return false;
   const d = date.y * 10000 + date.m * 100 + date.d;
-  const s = start.y * 10000 + start.m * 100 + start.d;
-  const e = end.y * 10000 + end.m * 100 + end.d;
-  return d > Math.min(s, e) && d < Math.max(s, e);
+  const a = s.y * 10000 + s.m * 100 + s.d;
+  const b = e.y * 10000 + e.m * 100 + e.d;
+  return d > Math.min(a, b) && d < Math.max(a, b);
 }
-function formatDate(d) {
+function fmtDate(d) {
   if (!d) return "";
-  return `${MONTHS[d.m].slice(0, 3)} ${d.d}, ${d.y}`;
+  return `${MONTHS[d.m].slice(0,3)} ${String(d.d).padStart(2,"0")}, ${d.y}`;
 }
 function dayKey(m, d) { return `${m + 1}-${d}`; }
 
+/* ─────────────────────────────────────────
+   COMPONENT
+───────────────────────────────────────── */
 export default function WallCalendar() {
   const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
-  const [hoverDate, setHoverDate] = useState(null);
+  const [year,      setYear]      = useState(today.getFullYear());
+  const [month,     setMonth]     = useState(today.getMonth());
+  const [start,     setStart]     = useState(null);
+  const [end,       setEnd]       = useState(null);
+  const [hover,     setHover]     = useState(null);
   const [selecting, setSelecting] = useState(false);
-  const [notes, setNotes] = useState({});
+  const [notes,     setNotes]     = useState({});
   const [noteInput, setNoteInput] = useState("");
-  const [activeNote, setActiveNote] = useState("range");
-  const [flipping, setFlipping] = useState(false);
-  const [flipDir, setFlipDir] = useState(1);
-  const [theme, setTheme] = useState("dark");
-  const [showHolidays, setShowHolidays] = useState(true);
-  const [selectedHoliday, setSelectedHoliday] = useState(null);
-  const noteRef = useRef();
+  const [dark,      setDark]      = useState(true);
+  const [showHol,   setShowHol]   = useState(true);
+  const [selHol,    setSelHol]    = useState(null);
+  const [flipping,  setFlipping]  = useState(false);
+  const [flipDir,   setFlipDir]   = useState(1);
+  const [toast,     setToast]     = useState(null);
+  const lordRef = useRef(null);
 
-  const monthInfo = MONTH_IMAGES[month];
-  const daysInMonth = getDaysInMonth(year, month);
-  const firstDay = getFirstDayOfMonth(year, month);
-
+  /* Load notes */
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("wallcal_notes");
-      if (saved) setNotes(JSON.parse(saved));
+      const s = localStorage.getItem("wc_notes_v2");
+      if (s) setNotes(JSON.parse(s));
     } catch {}
   }, []);
 
-  function saveNotes(n) {
+  /* Lordicon CDN script */
+  useEffect(() => {
+    if (document.getElementById("lordicon-script")) return;
+    const s = document.createElement("script");
+    s.id  = "lordicon-script";
+    s.src = "https://cdn.lordicon.com/lordicon.js";
+    document.head.appendChild(s);
+  }, []);
+
+  /* Sync lord-icon colors with theme */
+  useEffect(() => {
+    const icons = document.querySelectorAll("lord-icon");
+    icons.forEach(el => {
+      el.setAttribute("colors", dark
+        ? "primary:#a78bfa,secondary:#7c3aed"
+        : "primary:#6d28d9,secondary:#4c1d95");
+    });
+  }, [dark]);
+
+  function persistNotes(n) {
     setNotes(n);
-    try { localStorage.setItem("wallcal_notes", JSON.stringify(n)); } catch {}
+    try { localStorage.setItem("wc_notes_v2", JSON.stringify(n)); } catch {}
+  }
+
+  function showToast(msg, type = "success") {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 2800);
   }
 
   function changeMonth(dir) {
     setFlipDir(dir);
     setFlipping(true);
-    setSelectedHoliday(null);
+    setSelHol(null);
     setTimeout(() => {
-      setMonth(prev => {
-        let m = prev + dir;
-        if (m < 0) { setYear(y => y - 1); return 11; }
-        if (m > 11) { setYear(y => y + 1); return 0; }
+      setMonth(p => {
+        let m = p + dir;
+        if (m < 0)  { setYear(y => y - 1); return 11; }
+        if (m > 11) { setYear(y => y + 1); return 0;  }
         return m;
       });
       setFlipping(false);
-    }, 320);
+    }, 300);
   }
 
-  function handleDayClick(d) {
+  function clickDay(d) {
     const clicked = { y: year, m: month, d };
-    // Show holiday in hero panel when that day is clicked
-    const hk = dayKey(month, d);
-    const festivalName = getHolidays(year)[hk];
-    setSelectedHoliday(festivalName || null);
+    const hk      = dayKey(month, d);
+    const festival = getHolidays(year)[hk];
+    setSelHol(festival || null);
 
-    if (!selecting || !startDate) {
-      setStartDate(clicked);
-      setEndDate(null);
-      setSelecting(true);
+    if (!selecting || !start) {
+      setStart(clicked); setEnd(null); setSelecting(true);
     } else {
-      if (isSameDay(clicked, startDate)) {
-        setSelecting(false);
-        return;
-      }
-      setEndDate(clicked);
-      setSelecting(false);
+      if (sameDay(clicked, start)) { setSelecting(false); return; }
+      setEnd(clicked); setSelecting(false);
     }
   }
 
-  function handleDayHover(d) {
-    if (selecting) setHoverDate({ y: year, m: month, d });
-  }
-
-  function getDayState(d) {
-    const date = { y: year, m: month, d };
-    const effectiveEnd = selecting && hoverDate ? hoverDate : endDate;
-    if (isSameDay(date, startDate)) return "start";
-    if (effectiveEnd && isSameDay(date, effectiveEnd)) return "end";
-    if (isInRange(date, startDate, effectiveEnd)) return "range";
+  function dayState(d) {
+    const date  = { y: year, m: month, d };
+    const effEnd = selecting && hover ? hover : end;
+    if (sameDay(date, start))         return "start";
+    if (effEnd && sameDay(date, effEnd)) return "end";
+    if (inRange(date, start, effEnd)) return "range";
     return "none";
   }
 
+  const noteKey = start && end ? `${fmtDate(start)}__${fmtDate(end)}` : `month__${year}_${month}`;
+  const currentNotes = notes[noteKey] || [];
+
   function saveNote() {
     if (!noteInput.trim()) return;
-    const key = activeNote === "range"
-      ? `${formatDate(startDate)}_${formatDate(endDate)}`
-      : activeNote;
-    const updated = { ...notes, [key]: [...(notes[key] || []), { text: noteInput.trim(), time: Date.now() }] };
-    saveNotes(updated);
+    const updated = { ...notes, [noteKey]: [...currentNotes, { text: noteInput.trim(), ts: Date.now() }] };
+    persistNotes(updated);
     setNoteInput("");
+    showToast("Note saved");
   }
 
-  function deleteNote(key, idx) {
+  function deleteNote(idx) {
     const updated = { ...notes };
-    updated[key] = updated[key].filter((_, i) => i !== idx);
-    if (!updated[key].length) delete updated[key];
-    saveNotes(updated);
+    updated[noteKey] = updated[noteKey].filter((_, i) => i !== idx);
+    if (!updated[noteKey].length) delete updated[noteKey];
+    persistNotes(updated);
+    showToast("Note deleted", "error");
   }
 
-  const rangeKey = `${formatDate(startDate)}_${formatDate(endDate)}`;
-  const currentNotes = notes[activeNote === "range" ? rangeKey : activeNote] || [];
-  const allNoteKeys = Object.keys(notes).filter(k => notes[k]?.length > 0);
-
-  const isDark = theme === "dark";
-
-  const colors = {
-    bg: isDark ? monthInfo.bg : "#f8f5f0",
-    surface: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
-    surfaceHover: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-    border: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
-    text: isDark ? "#e8e0d8" : "#1a1208",
-    textMuted: isDark ? "rgba(232,224,216,0.5)" : "rgba(26,18,8,0.45)",
-    accent: monthInfo.accent,
-    accentRgb: monthInfo.accent,
-    today: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.08)",
-  };
-
-  const css = `
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:${colors.bg};min-height:100vh;font-family:'DM Sans',sans-serif;transition:background 0.5s;}
-    .cal-root{min-height:100vh;background:${colors.bg};padding:24px 16px;transition:background 0.5s;}
-    .cal-wrap{max-width:1100px;margin:0 auto;}
-    .cal-card{background:${isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.85)"};border:1px solid ${colors.border};border-radius:24px;overflow:hidden;backdrop-filter:blur(20px);box-shadow:${isDark ? "0 32px 80px rgba(0,0,0,0.5)" : "0 16px 48px rgba(0,0,0,0.12)"};transition:all 0.5s;}
-    .cal-top{display:grid;grid-template-columns:340px 1fr;min-height:480px;}
-    @media(max-width:768px){.cal-top{grid-template-columns:1fr;min-height:auto;}}
-    .cal-hero{position:relative;background:${monthInfo.gradient};display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:32px;min-height:300px;overflow:hidden;}
-    .cal-hero::before{content:'';position:absolute;inset:0;background:${monthInfo.gradient};opacity:0.9;}
-    .cal-hero-emoji{position:absolute;top:40px;left:50%;transform:translateX(-50%);font-size:96px;opacity:0.25;filter:blur(2px);}
-    .cal-hero-emoji2{position:relative;font-size:80px;line-height:1;margin-bottom:16px;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.4));}
-    .cal-hero-month{position:relative;font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:#fff;letter-spacing:-1px;line-height:1;text-shadow:0 2px 16px rgba(0,0,0,0.4);}
-    .cal-hero-year{position:relative;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:300;color:rgba(255,255,255,0.7);letter-spacing:4px;margin-top:6px;}
-    .cal-rings{position:absolute;top:0;left:0;right:0;height:28px;display:flex;justify-content:space-evenly;align-items:center;padding:0 40px;}
-    .ring{width:18px;height:28px;border:2.5px solid rgba(255,255,255,0.3);border-top:none;border-radius:0 0 12px 12px;background:rgba(255,255,255,0.1);}
-    .cal-body{padding:28px 24px 28px;display:flex;flex-direction:column;}
-    .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
-    .nav-btn{background:${colors.surface};border:1px solid ${colors.border};color:${colors.text};width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.2s;}
-    .nav-btn:hover{background:${colors.surfaceHover};transform:scale(1.05);}
-    .nav-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:${colors.text};}
-    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
-    .cal-dow{text-align:center;font-size:11px;font-weight:500;color:${colors.textMuted};padding:6px 0;letter-spacing:1.5px;text-transform:uppercase;}
-    .cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:400;color:${colors.text};border-radius:10px;cursor:pointer;position:relative;transition:all 0.15s;user-select:none;}
-    .cal-day:hover{background:${colors.surfaceHover};}
-    .cal-day.today{background:${colors.today};font-weight:500;}
-    .cal-day.start,.cal-day.end{background:${monthInfo.accent};color:#fff;font-weight:600;box-shadow:0 4px 16px ${monthInfo.accent}66;}
-    .cal-day.range{background:${monthInfo.accent}22;color:${isDark ? "#fff" : colors.text};}
-    .cal-day.start{border-radius:10px 10px 10px 10px;}
-    .cal-day.end{border-radius:10px 10px 10px 10px;}
-    .cal-day .holiday-dot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:${monthInfo.accent};opacity:0.8;}
-    .cal-day.start .holiday-dot,.cal-day.end .holiday-dot{background:#fff;}
-    .cal-day .holiday-tip{display:none;position:absolute;bottom:110%;left:50%;transform:translateX(-50%);background:${isDark ? "#1a1a2e" : "#1a1208"};color:#fff;font-size:10px;padding:4px 8px;border-radius:6px;white-space:nowrap;z-index:10;pointer-events:none;}
-    .cal-day:hover .holiday-tip{display:block;}
-    .cal-bottom{border-top:1px solid ${colors.border};display:grid;grid-template-columns:1fr 1fr;}
-    @media(max-width:640px){.cal-bottom{grid-template-columns:1fr;}}
-    .notes-panel{padding:24px;border-right:1px solid ${colors.border};}
-    @media(max-width:640px){.notes-panel{border-right:none;border-bottom:1px solid ${colors.border};}}
-    .notes-title{font-family:'Playfair Display',serif;font-size:16px;color:${colors.text};margin-bottom:12px;display:flex;align-items:center;gap:8px;}
-    .notes-tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
-    .notes-tab{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid ${colors.border};background:transparent;color:${colors.textMuted};cursor:pointer;transition:all 0.2s;}
-    .notes-tab.active{background:${monthInfo.accent};color:#fff;border-color:${monthInfo.accent};}
-    .notes-input-row{display:flex;gap:8px;margin-bottom:12px;}
-    .notes-input{flex:1;background:${colors.surface};border:1px solid ${colors.border};border-radius:10px;padding:8px 12px;font-size:13px;color:${colors.text};font-family:'DM Sans',sans-serif;outline:none;resize:none;}
-    .notes-input:focus{border-color:${monthInfo.accent}88;}
-    .notes-save{background:${monthInfo.accent};color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;white-space:nowrap;}
-    .notes-save:hover{opacity:0.85;transform:scale(1.02);}
-    .note-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid ${colors.border};}
-    .note-item:last-child{border-bottom:none;}
-    .note-dot{width:6px;height:6px;border-radius:50%;background:${monthInfo.accent};margin-top:6px;flex-shrink:0;}
-    .note-text{font-size:13px;color:${colors.text};flex:1;line-height:1.5;}
-    .note-del{background:transparent;border:none;color:${colors.textMuted};cursor:pointer;font-size:14px;padding:0 4px;opacity:0.5;transition:opacity 0.2s;}
-    .note-del:hover{opacity:1;color:#e25;}
-    .info-panel{padding:24px;}
-    .info-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:${colors.textMuted};margin-bottom:6px;}
-    .info-val{font-family:'Playfair Display',serif;font-size:15px;color:${colors.text};margin-bottom:16px;}
-    .range-display{background:${colors.surface};border-radius:12px;padding:14px;margin-bottom:16px;border:1px solid ${colors.border};}
-    .range-bar{height:4px;background:${colors.border};border-radius:2px;margin:10px 0;overflow:hidden;}
-    .range-fill{height:100%;background:linear-gradient(90deg,${monthInfo.accent},${monthInfo.accent}88);border-radius:2px;transition:width 0.3s;}
-    .settings-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-    .toggle{position:relative;display:inline-block;width:38px;height:22px;}
-    .toggle input{opacity:0;width:0;height:0;}
-    .toggle-slider{position:absolute;inset:0;background:${colors.border};border-radius:11px;cursor:pointer;transition:0.3s;}
-    .toggle-slider:before{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;left:3px;transition:0.3s;}
-    input:checked + .toggle-slider{background:${monthInfo.accent};}
-    input:checked + .toggle-slider:before{transform:translateX(16px);}
-    .theme-btn{background:${colors.surface};border:1px solid ${colors.border};color:${colors.text};border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
-    .theme-btn:hover{background:${colors.surfaceHover};}
-    .flip-enter{animation:flipIn 0.32s ease-out;}
-    @keyframes fadeSlideUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-    @keyframes flipIn{from{opacity:0;transform:rotateX(-${flipDir > 0 ? "12" : "-12"}deg) translateY(${flipDir > 0 ? "8" : "-8"}px);}to{opacity:1;transform:rotateX(0) translateY(0);}}
-    .empty{color:${colors.textMuted};font-size:13px;font-style:italic;}
-    ::-webkit-scrollbar{width:4px;}
-    ::-webkit-scrollbar-track{background:transparent;}
-    ::-webkit-scrollbar-thumb{background:${colors.border};border-radius:2px;}
-  `;
-
-  const rangeLength = (() => {
-    if (!startDate || !endDate) return 0;
-    const a = new Date(startDate.y, startDate.m, startDate.d);
-    const b = new Date(endDate.y, endDate.m, endDate.d);
+  const rangeLen = (() => {
+    if (!start || !end) return 0;
+    const a = new Date(start.y, start.m, start.d);
+    const b = new Date(end.y, end.m, end.d);
     return Math.abs(Math.round((b - a) / 86400000)) + 1;
   })();
+
+  const daysInMonth = getDaysInMonth(year, month);
+  const firstDay    = getFirstDay(year, month);
+  const holidays    = getHolidays(year);
+
+  /* Upcoming Holidays (dynamic for displayed month) */
+  const upcomingHolidays = Object.entries(holidays)
+    .map(([key, name]) => {
+      const [m, d] = key.split("-").map(Number);
+      return { m: m - 1, d, name };
+    })
+    .filter(h => h.m === month)
+    .sort((a, b) => a.d - b.d)
+    .slice(0, 3);
+
+  /* ── THEME TOKENS ── */
+  const T = dark ? {
+    bg:          "#0f0f13",
+    card:        "#16161e",
+    surface:     "#1e1e2a",
+    surfaceHov:  "#252534",
+    border:      "rgba(255,255,255,0.07)",
+    borderHov:   "rgba(255,255,255,0.14)",
+    text:        "#e2e0f0",
+    textMuted:   "rgba(226,224,240,0.45)",
+    textFaint:   "rgba(226,224,240,0.25)",
+    accent:      "#a78bfa",
+    accentDeep:  "#7c3aed",
+    accentGlow:  "rgba(167,139,250,0.18)",
+    success:     "#34d399",
+    danger:      "#f87171",
+    headerBg:    "#12121a",
+  } : {
+    bg:          "#f4f3ff",
+    card:        "#ffffff",
+    surface:     "#f0effe",
+    surfaceHov:  "#e8e6fd",
+    border:      "rgba(0,0,0,0.07)",
+    borderHov:   "rgba(0,0,0,0.14)",
+    text:        "#1e1b3a",
+    textMuted:   "rgba(30,27,58,0.5)",
+    textFaint:   "rgba(30,27,58,0.25)",
+    accent:      "#6d28d9",
+    accentDeep:  "#4c1d95",
+    accentGlow:  "rgba(109,40,217,0.12)",
+    success:     "#059669",
+    danger:      "#dc2626",
+    headerBg:    "#faf9ff",
+  };
+
+  /* ── CSS ── */
+  const css = `
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: ${T.bg}; font-family: 'Inter', sans-serif; min-height: 100vh; transition: background 0.4s; }
+    .wc-root { min-height: 100vh; width: 100%; background: ${T.bg}; display: flex; flex-direction: column; transition: background 0.4s; }
+
+    .wc-header {
+      width: 100%; background: ${T.headerBg}; border-bottom: 1px solid ${T.border};
+      display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 60px;
+      position: sticky; top: 0; z-index: 100; backdrop-filter: blur(12px);
+    }
+    .wc-header-brand { display: flex; align-items: center; gap: 10px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 17px; color: ${T.text}; }
+    .wc-header-brand span { color: ${T.accent}; }
+    .wc-header-right { display: flex; align-items: center; gap: 8px; }
+
+    .wc-theme-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid ${T.border}; background: ${T.surface}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; overflow: hidden; }
+    .wc-theme-btn:hover { background: ${T.surfaceHov}; border-color: ${T.borderHov}; }
+
+    .wc-hol-toggle { display: flex; align-items: center; gap: 8px; font-size: 12px; color: ${T.textMuted}; font-weight: 500; letter-spacing: 0.3px; }
+    .toggle-pill {
+      position: relative; width: 36px; height: 20px; border-radius: 10px;
+      background: ${showHol ? T.accent : T.surface}; border: 1px solid ${showHol ? T.accent : T.border};
+      cursor: pointer; transition: all 0.25s;
+    }
+    .toggle-pill::after {
+      content: ''; position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #fff;
+      top: 2px; left: ${showHol ? "18px" : "2px"}; transition: left 0.25s; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    .wc-main {
+      flex: 1; width: 100%; max-width: none; margin: 0; padding: 24px 20px;
+      display: grid; grid-template-columns: 1fr 340px; gap: 20px;
+    }
+    @media (max-width: 1024px) {
+      .wc-main { grid-template-columns: 1fr; }
+      .wc-sidebar { order: 2; }
+      .wc-cal-card { order: 1; }
+    }
+    @media (max-width: 600px) {
+      .wc-main { padding: 16px 12px; gap: 14px; }
+      .wc-header { padding: 0 16px; }
+    }
+
+    .wc-hero {
+      width: 100%; height: 220px; overflow: hidden; border-radius: 20px; margin-bottom: 12px;
+      border: 1px solid ${T.border}; box-shadow: ${dark ? "0 12px 30px rgba(0,0,0,0.18)" : "0 10px 24px rgba(0,0,0,0.08)"};
+    }
+    .wc-hero img { width: 100%; height: 100%; object-fit: cover; }
+    .wc-hero-caption { margin: 8px 4px 16px; font-size: 13px; color: ${T.textMuted}; letter-spacing: 0.3px; }
+
+    .wc-cal-card, .wc-range-card, .wc-notes-card, .wc-mini-card {
+      background: ${T.card}; border: 1px solid ${T.border}; border-radius: 20px;
+      box-shadow: ${dark ? "0 12px 30px rgba(0,0,0,0.18)" : "0 10px 24px rgba(0,0,0,0.08)"};
+    }
+    .wc-cal-card { overflow: hidden; }
+
+    .wc-month-bar { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid ${T.border}; }
+    .wc-month-name { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; color: ${T.text}; display: flex; align-items: baseline; gap: 10px; }
+    .wc-month-year { font-size: 14px; font-weight: 400; color: ${T.textMuted}; }
+    .wc-nav-group { display: flex; align-items: center; gap: 8px; }
+    .wc-nav-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid ${T.border}; background: ${T.surface}; color: ${T.text}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.18s; }
+    .wc-nav-btn:hover { background: ${T.accentGlow}; border-color: ${T.accent}; color: ${T.accent}; }
+    .wc-today-btn { height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid ${T.border}; background: ${T.surface}; color: ${T.textMuted}; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.18s; }
+    .wc-today-btn:hover { background: ${T.accentGlow}; border-color: ${T.accent}; color: ${T.accent}; }
+
+    .wc-festival-bar { margin: 0 24px 0; padding: 10px 16px; border-radius: 12px; background: ${T.accentGlow}; border: 1px solid ${T.accent}33; display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+    .wc-festival-label { font-size: 11px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: ${T.textMuted}; }
+    .wc-festival-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 600; color: ${T.accent}; }
+    .wc-festival-close { margin-left: auto; background: transparent; border: none; color: ${T.textMuted}; cursor: pointer; }
+
+    .wc-grid-wrap { padding: 16px 24px 24px; }
+    .wc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .wc-dow { text-align: center; font-size: 10px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: ${T.textFaint}; padding: 6px 0 10px; }
+    .wc-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; color: ${T.text}; border-radius: 10px; cursor: pointer; transition: all 0.15s; user-select: none; }
+    .wc-day:hover { background: ${T.surfaceHov}; }
+    .wc-day.is-today { background: ${T.surface}; font-weight: 600; color: ${T.accent}; box-shadow: inset 0 0 0 1.5px ${T.accent}55; }
+    .wc-day.is-start, .wc-day.is-end { background: ${T.accent}; color: #fff; font-weight: 600; box-shadow: 0 4px 16px ${T.accent}44; }
+    .wc-day.is-range { background: ${T.accentGlow}; color: ${T.text}; border-radius: 0; }
+    .wc-day.is-start { border-radius: 10px 0 0 10px; }
+    .wc-day.is-end   { border-radius: 0 10px 10px 0; }
+    .wc-day.is-start.is-solo { border-radius: 10px; }
+    .wc-hol-dot { width: 4px; height: 4px; border-radius: 50%; background: ${T.accent}; opacity: 0.7; margin-top: 3px; }
+
+    .wc-sidebar { display: flex; flex-direction: column; gap: 16px; }
+    .wc-range-card { padding: 20px; }
+    .wc-notes-card { padding: 20px; flex: 1; }
+    .wc-mini-card { padding: 16px 18px; }
+    .wc-mini-item { font-size: 12px; color: ${T.text}; margin-top: 8px; }
+    .wc-mini-sub { font-size: 11px; color: ${T.textMuted}; }
+
+    .wc-card-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
+   letter-spacing: 1px; text-transform: uppercase; color: #facc15; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .wc-range-dates { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: ${T.text}; line-height: 1.3; margin-bottom: 10px; }
+    .wc-range-sep { display: block; font-size: 11px; color: ${T.textMuted}; margin: 2px 0; }
+    .wc-range-chip { display: inline-flex; align-items: center; gap: 5px; background: ${T.accentGlow}; color: ${T.accent}; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; border: 1px solid ${T.accent}33; }
+    .wc-empty-hint { font-size: 13px; color: ${T.textMuted}; line-height: 1.6; }
+    .wc-clear-btn { margin-top: 12px; width: 100%; padding: 9px; border-radius: 10px; border: 1px solid ${T.border}; background: ${T.surface}; color: ${T.textMuted}; font-size: 12px; cursor: pointer; }
+    .wc-clear-btn:hover { border-color: ${T.danger}; color: ${T.danger}; background: ${T.danger}11; }
+
+    .wc-notes-context { font-size: 11px; color: ${T.accent}; font-weight: 500; background: ${T.accentGlow}; border: 1px solid ${T.accent}33; border-radius: 8px; padding: 6px 10px; margin-bottom: 14px; }
+    .wc-note-input-wrap { display: flex; gap: 8px; margin-bottom: 14px; }
+    .wc-note-input { flex: 1; background: ${T.surface}; border: 1px solid ${T.border}; border-radius: 10px; padding: 9px 12px; font-size: 13px; color: ${T.text}; resize: none; }
+    .wc-note-save { width: 38px; height: 38px; border-radius: 10px; border: none; background: ${T.accent}; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .wc-notes-list { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+    .wc-note-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: ${T.surface}; border: 1px solid ${T.border}; border-radius: 10px; }
+    .wc-note-bullet { width: 6px; height: 6px; border-radius: 50%; background: ${T.accent}; margin-top: 5px; }
+    .wc-note-text { flex: 1; font-size: 13px; color: ${T.text}; line-height: 1.5; }
+    .wc-note-del { background: transparent; border: none; color: ${T.textFaint}; cursor: pointer; }
+
+    .wc-no-notes { text-align: center; padding: 24px 0; font-size: 13px; color: ${T.textFaint}; line-height: 1.7; }
+    .wc-no-note-sub { font-size: 11px; color: ${T.textMuted}; margin-top: 6px; }
+
+    .wc-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); padding: 10px 20px; border-radius: 40px; font-size: 13px; font-weight: 500; z-index: 999; display: flex; align-items: center; gap: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); background: ${T.card}; border: 1px solid ${T.border}; color: ${T.text}; }
+  `;
 
   return (
     <>
       <style>{css}</style>
-      <div className="cal-root">
-        <div className="cal-wrap">
-          <div className="cal-card" key={`${month}-${year}-${theme}`}>
 
-            {/* TOP: Hero + Grid */}
-            <div className={`cal-top ${flipping ? "flip-enter" : ""}`}>
-              {/* Hero Panel */}
-              <div className="cal-hero">
-                <div className="cal-rings">
-                  {[...Array(8)].map((_, i) => <div key={i} className="ring" />)}
+      {toast && (
+        <div className="wc-toast">
+          {toast.type === "success"
+            ? <TickCircle size={16} color={T.success} variant="Bold" />
+            : <InfoCircle size={16} color={T.danger} variant="Bold" />}
+          {toast.msg}
+        </div>
+      )}
+
+      <div className="wc-root">
+
+        <header className="wc-header">
+          <div className="wc-header-brand">
+            <Calendar size={20} color={T.accent} variant="Bulk" />
+            Wall<span>Calendar</span>
+          </div>
+
+          <div className="wc-header-right">
+            <label className="wc-hol-toggle" style={{ cursor: "pointer" }}>
+              <span>Holidays</span>
+              <div className="toggle-pill" onClick={() => setShowHol(p => !p)} />
+            </label>
+
+            <button
+              className="wc-theme-btn"
+              onClick={() => setDark(p => !p)}
+              title={dark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              <lord-icon
+                ref={lordRef}
+                src={dark
+                  ? "https://cdn.lordicon.com/abfverha.json"
+                  : "https://cdn.lordicon.com/ybfcwnqq.json"}
+                trigger="click"
+                colors={dark
+                  ? "primary:#a78bfa,secondary:#7c3aed"
+                  : "primary:#6d28d9,secondary:#4c1d95"}
+                style={{ width: 22, height: 22 }}
+              />
+            </button>
+          </div>
+        </header>
+
+        <main className="wc-main">
+
+          <div>
+            <div className="wc-hero">
+              <img
+                src="https://images.pexels.com/photos/9403177/pexels-photo-9403177.jpeg?cs=srgb&dl=pexels-lucaspezeta-9403177.jpg&fm=jpg"
+                alt="Calendar hero"
+              />
+            </div>
+            <div className="wc-hero-caption">
+              Plan your month. Track your tasks. Never miss a festival. All in one place.
+            </div>
+
+            <div className="wc-cal-card">
+              <div className="wc-month-bar">
+                <div className="wc-month-name">
+                  {MONTHS[month]}
+                  <span className="wc-month-year">{year}</span>
                 </div>
-                <div className="cal-hero-emoji">{monthInfo.fallback}</div>
-                <div className="cal-hero-emoji2">{selectedHoliday ? "" : monthInfo.fallback}</div>
-                <div className="cal-hero-month">{MONTHS[month]}</div>
-                <div className="cal-hero-year">{year}</div>
-                {selectedHoliday && (
-                  <div style={{
-                    position: "relative",
-                    marginTop: 12,
-                    background: "rgba(255,255,255,0.15)",
-                    backdropFilter: "blur(8px)",
-                    borderRadius: 12,
-                    padding: "8px 16px",
-                    textAlign: "center",
-                    border: "1px solid rgba(255,255,255,0.25)",
-                    animation: "fadeSlideUp 0.3s ease-out"
-                  }}>
-                    <div style={{ fontSize: 10, letterSpacing: "2px", textTransform: "uppercase", color: "rgba(255,255,255,0.7)", marginBottom: 3 }}>Festival</div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", fontFamily: "'Playfair Display', serif" }}>{selectedHoliday}</div>
-                  </div>
-                )}
+                <div className="wc-nav-group">
+                  <button className="wc-today-btn" onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth()); }}>Today</button>
+                  <button className="wc-nav-btn" onClick={() => changeMonth(-1)}><ArrowLeft2 size={16} color={T.text} /></button>
+                  <button className="wc-nav-btn" onClick={() => changeMonth(1)}><ArrowRight2 size={16} color={T.text} /></button>
+                </div>
               </div>
 
-              <div className="cal-body">
-                {/* Nav */}
-                <div className="cal-nav">
-                  <button className="nav-btn" onClick={() => changeMonth(-1)}>‹</button>
-                  <span className="nav-title">{MONTHS[month].slice(0,3)} {year}</span>
-                  <button className="nav-btn" onClick={() => changeMonth(1)}>›</button>
+              {selHol && showHol && (
+                <div className="wc-festival-bar">
+                  <lord-icon src="https://cdn.lordicon.com/dxjqoygy.json" trigger="loop" colors={`primary:${T.accent},secondary:${T.accentDeep}`} style={{ width: 28, height: 28 }} />
+                  <div>
+                    <div className="wc-festival-label">Festival</div>
+                    <div className="wc-festival-name">{selHol}</div>
+                  </div>
+                  <button className="wc-festival-close" onClick={() => setSelHol(null)}>
+                    <CloseCircle size={18} color={T.textMuted} />
+                  </button>
                 </div>
+              )}
 
-                {/* Day of Week Headers */}
-                <div className="cal-grid">
-                  {DAYS.map(d => <div key={d} className="cal-dow">{d}</div>)}
-
-                  {/* Empty cells */}
-                  {[...Array(firstDay)].map((_, i) => <div key={`e${i}`} />)}
-
-                  {/* Days */}
+              <div className="wc-grid-wrap">
+                <div className="wc-grid">
+                  {DAYS_SHORT.map(d => (<div key={d} className="wc-dow">{d}</div>))}
+                  {[...Array(firstDay)].map((_, i) => (<div key={`e${i}`} />))}
                   {[...Array(daysInMonth)].map((_, i) => {
                     const d = i + 1;
-                    const state = getDayState(d);
+                    const state = dayState(d);
                     const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === d;
                     const hk = dayKey(month, d);
-                    const holiday = showHolidays && getHolidays(year)[hk];
+                    const festival = showHol && holidays[hk];
+                    const isSolo = state === "start" && !end && !hover;
+
                     return (
                       <div
                         key={d}
-                        className={`cal-day ${state !== "none" ? state : ""} ${isToday ? "today" : ""}`}
-                        onClick={() => handleDayClick(d)}
-                        onMouseEnter={() => handleDayHover(d)}
-                        onMouseLeave={() => setHoverDate(null)}
-                        title={holiday || ""}
+                        className={["wc-day", state !== "none" ? `is-${state}` : "", isToday ? "is-today" : "", isSolo ? "is-solo" : ""].filter(Boolean).join(" ")}
+                        onClick={() => clickDay(d)}
+                        onMouseEnter={() => { if (selecting) setHover({ y: year, m: month, d }); }}
+                        onMouseLeave={() => setHover(null)}
+                        title={festival || ""}
                       >
                         {d}
-                        {holiday && <><div className="holiday-dot" /><div className="holiday-tip">{holiday}</div></>}
+                        {festival && <div className="wc-hol-dot" />}
                       </div>
                     );
                   })}
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* BOTTOM: Notes + Info */}
-            <div className="cal-bottom">
-              {/* Notes Panel */}
-              <div className="notes-panel">
-                <div className="notes-title">
-                  <span>✎</span> Notes
-                </div>
+          <div className="wc-sidebar">
+            <div className="wc-range-card">
+              <div className="wc-card-title"><Calendar size={14} color={T.textFaint} /> Selected Range</div>
+              {start ? (
+                <>
+                  <div className="wc-range-dates">
+                    {fmtDate(start)}
+                    {(end || (selecting && hover)) && (
+                      <>
+                        <span className="wc-range-sep">to</span>
+                        {fmtDate(end || (selecting && hover ? { ...hover } : null))}
+                      </>
+                    )}
+                  </div>
+                  {end && (
+                    <div className="wc-range-chip"><TickCircle size={12} variant="Bold" />{rangeLen} day{rangeLen !== 1 ? "s" : ""} selected</div>
+                  )}
+                  {!end && <div className="wc-empty-hint">Click another day to set end date.</div>}
+                  <button className="wc-clear-btn" onClick={() => { setStart(null); setEnd(null); setSelecting(false); setSelHol(null); }}>Clear selection</button>
+                </>
+              ) : (
+                <div className="wc-empty-hint">Click any day on the calendar to start selecting a date range.</div>
+              )}
+            </div>
 
-                {/* Tabs */}
-                <div className="notes-tabs">
-                  <button
-                    className={`notes-tab ${activeNote === "range" ? "active" : ""}`}
-                    onClick={() => setActiveNote("range")}
-                  >
-                    {startDate && endDate ? `${formatDate(startDate).split(",")[0]} – ${formatDate(endDate).split(",")[0]}` : "Selected Range"}
-                  </button>
-                  <button
-                    className={`notes-tab ${activeNote === "month" ? "active" : ""}`}
-                    onClick={() => setActiveNote("month")}
-                  >
-                    {MONTHS[month]}
-                  </button>
-                  {allNoteKeys.filter(k => k !== rangeKey && k !== "month").slice(0,2).map(k => (
-                    <button key={k} className={`notes-tab ${activeNote === k ? "active" : ""}`} onClick={() => setActiveNote(k)}>
-                      {k.length > 20 ? k.slice(0,20) + "…" : k}
-                    </button>
-                  ))}
-                </div>
+            <div className="wc-mini-card">
+              <div className="wc-card-title">Upcoming Holidays</div>
+              {upcomingHolidays.length === 0 ? (
+                <div className="wc-mini-sub">No holidays this month.</div>
+              ) : (
+                upcomingHolidays.map((h, i) => (
+                  <div key={i} className="wc-mini-item">
+                    {MONTHS[h.m].slice(0,3)} {String(h.d).padStart(2,"0")} — {h.name}
+                  </div>
+                ))
+              )}
+            </div>
 
-                {/* Input */}
-                <div className="notes-input-row">
-                  <textarea
-                    ref={noteRef}
-                    className="notes-input"
-                    placeholder={
-                      activeNote === "range" && (!startDate || !endDate)
-                        ? "Select a date range first…"
-                        : "Add a note…"
-                    }
-                    rows={2}
-                    value={noteInput}
-                    onChange={e => setNoteInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveNote(); } }}
-                    disabled={activeNote === "range" && (!startDate || !endDate)}
-                  />
-                  <button className="notes-save" onClick={saveNote}>Save</button>
-                </div>
-
-                {/* Notes list */}
-                <div style={{ maxHeight: 160, overflowY: "auto" }}>
-                  {currentNotes.length === 0
-                    ? <div className="empty">No notes yet.</div>
-                    : currentNotes.map((n, i) => (
-                      <div key={i} className="note-item">
-                        <div className="note-dot" />
-                        <div className="note-text">{n.text}</div>
-                        <button className="note-del" onClick={() => deleteNote(activeNote === "range" ? rangeKey : activeNote, i)}>×</button>
-                      </div>
-                    ))
-                  }
-                </div>
+            <div className="wc-notes-card">
+              <div className="wc-card-title"><Note size={14} color={T.textFaint} variant="Bulk" /> Notes</div>
+              <div className="wc-notes-context">
+                {start && end ? `${fmtDate(start)} — ${fmtDate(end)}` : `${MONTHS[month]} ${year}`}
               </div>
 
-              {/* Info Panel */}
-              <div className="info-panel">
-                {/* Range info */}
-                <div className="range-display">
-                  <div className="info-label">Selected Range</div>
-                  {startDate
-                    ? <>
-                      <div className="info-val">{formatDate(startDate)}{endDate ? ` → ${formatDate(endDate)}` : " → …"}</div>
-                      {endDate && <>
-                        <div className="range-bar">
-                          <div className="range-fill" style={{ width: `${Math.min(100, rangeLength * 3)}%` }} />
-                        </div>
-                        <div style={{ fontSize: 12, color: colors.textMuted }}>{rangeLength} day{rangeLength > 1 ? "s" : ""} selected</div>
-                      </>}
-                    </>
-                    : <div className="empty">Click a day to start selecting</div>
-                  }
-                </div>
+              <div className="wc-note-input-wrap">
+                <textarea
+                  className="wc-note-input"
+                  rows={2}
+                  placeholder="Add a note… (Enter to save)"
+                  value={noteInput}
+                  onChange={e => setNoteInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      saveNote();
+                    }
+                  }}
+                />
+                <button className="wc-note-save" onClick={saveNote} disabled={!noteInput.trim()} title="Save note">
+                  <Add size={18} color="#fff" />
+                </button>
+              </div>
 
-                {/* Settings */}
-                <div className="info-label">Options</div>
-                <div className="settings-row">
-                  <span style={{ fontSize: 13, color: colors.text }}>Show holidays</span>
-                  <label className="toggle">
-                    <input type="checkbox" checked={showHolidays} onChange={e => setShowHolidays(e.target.checked)} />
-                    <span className="toggle-slider" />
-                  </label>
-                </div>
-                <div className="settings-row">
-                  <span style={{ fontSize: 13, color: colors.text }}>Dark mode</span>
-                  <label className="toggle">
-                    <input type="checkbox" checked={isDark} onChange={e => setTheme(e.target.checked ? "dark" : "light")} />
-                    <span className="toggle-slider" />
-                  </label>
-                </div>
-                <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${colors.border}` }}>
-                  <div className="info-label">Month</div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <button className="theme-btn" onClick={() => { setStartDate(null); setEndDate(null); setSelecting(false); }}>Clear selection</button>
-                    <button className="theme-btn" onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth()); }}>Today</button>
+              <div className="wc-notes-list">
+                {currentNotes.length === 0 ? (
+                  <div className="wc-no-notes">
+                    <Note size={28} color={T.textFaint} />
+                    <br />
+                    No notes yet
+                    <div className="wc-no-note-sub">Tip: Add reminders for birthdays & tasks.</div>
                   </div>
-                </div>
-
-                {/* Holiday for today */}
-                {showHolidays && getHolidays(year)[dayKey(month, today.getDate())] && year === today.getFullYear() && month === today.getMonth() && (
-                  <div style={{ marginTop: 16, padding: 10, background: `${monthInfo.accent}22`, borderRadius: 10, border: `1px solid ${monthInfo.accent}44` }}>
-                    <div style={{ fontSize: 11, color: colors.textMuted, letterSpacing: "1px", textTransform: "uppercase", marginBottom: 4 }}>Today's Holiday</div>
-                    <div style={{ fontSize: 13, color: colors.text }}>🎉{getHolidays(year)[dayKey(month, today.getDate())]}</div>
-                  </div>
+                ) : (
+                  currentNotes.map((n, i) => (
+                    <div key={i} className="wc-note-item">
+                      <div className="wc-note-bullet" />
+                      <div className="wc-note-text">{n.text}</div>
+                      <button className="wc-note-del" onClick={() => deleteNote(i)} title="Delete note">
+                        <Trash size={15} color={T.textFaint} />
+                      </button>
+                    </div>
+                  ))
                 )}
               </div>
             </div>
 
           </div>
-
-          <div style={{ textAlign: "center", marginTop: 16, fontSize: 11, color: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)", letterSpacing: "2px" }}>
-            WALL CALENDAR · {year}
-          </div>
-        </div>
+        </main>
       </div>
     </>
   );
